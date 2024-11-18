@@ -116,8 +116,8 @@ QSqlQueryModel* produits::trierProduits(int index)
 
     return model;
 }
-// recherche par nom produit
 
+// recherche par nom produit
 QSqlQueryModel* produits::rechercheparnomproduit(const QString& nomproduit) {
     QSqlQuery query;
     query.prepare("SELECT * FROM produits WHERE nomproduit LIKE :nomproduit");

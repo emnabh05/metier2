@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    MainWindow w;
+    MainWindow w;//instanciation de lobjet appel constructeur appel de methode afficher
     w.show();
   /*  QMessageBox::information(nullptr, QObject::tr("connexion a la base donnée confirmé"),
                              QObject::tr("connecté.\n"

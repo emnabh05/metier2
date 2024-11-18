@@ -205,7 +205,7 @@ void MainWindow::on_bouttonconfirmerajout_clicked()
     produits produitToAdd(nomProduit, dateExpiration, quantiteDisponible, humidite, temperature, dateDebut);
     if (produitToAdd.ajouterProduit(produitToAdd)) {
         QMessageBox::information(this, "Succès", "Produit ajouté avec succès!");
-        ui->tableauproduits->setModel(produits().afficherProduits());
+        ui->tableauproduits->setModel(produits().afficherProduits());//appeler methode afficher
         historique("Ajout", nomProduit, "Quantité: " + QString::number(quantiteDisponible));
 
     } else {
@@ -421,7 +421,7 @@ int nbrproduits(const QString& req) {
     return 0;
 }
 
-void MainWindow::on_bouttonpdffile_clicked()
+/*void MainWindow::on_bouttonpdffile_clicked()
 {
     QString dateAct = QDate::currentDate().toString("dd/MM/yyyy");
 
@@ -457,7 +457,103 @@ void MainWindow::on_bouttonpdffile_clicked()
     } else {
         QMessageBox::warning(this, "PDF", "pas de ficher selection ");
     }
+}*/
+
+void MainWindow::on_bouttonpdffile_clicked()
+{
+    // Sélection du fichier de sauvegarde
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Enregistrer le PDF"), "", tr("PDF Files (*.pdf);;All Files (*)"));
+    if (fileName.isEmpty())
+        return;
+
+    // Création de l'écrivain PDF
+    QPdfWriter pdfWriter(fileName);
+    pdfWriter.setPageSize(QPageSize(QPageSize::A4));
+    pdfWriter.setResolution(300);  // Résolution de l'impression
+    pdfWriter.setPageMargins(QMarginsF(15, 15, 15, 15)); // Marges de la page
+    QPainter painter(&pdfWriter);
+
+    // Initialisation de la position verticale
+    int y = 100;
+    int page = 1;
+
+    // Titre principal
+    painter.setFont(QFont("Arial", 20, QFont::Bold));
+    painter.drawText(100, y, tr("Liste des Produits"));
+
+    // Date actuelle
+    QString currentDate = QDate::currentDate().toString("dd/MM/yyyy");
+    painter.setFont(QFont("Arial", 12));
+    painter.drawText(pdfWriter.width() - 500, y, tr("Date : ") + currentDate);
+
+    // Ligne sous le titre
+    y += 50;
+    painter.drawLine(100, y, pdfWriter.width() - 100, y);
+
+    y += 50; // Espace après le titre
+
+    // Largeur de colonne
+    int colWidth = (pdfWriter.width() - 200) / 7; // Calcul dynamique
+
+    // Fonction pour dessiner les en-têtes
+    auto drawHeaders = [&]() {
+        QStringList headers = { "IDP", "NomP", "DateExp", "Quantité", "Humidité", "Temp", "DateAjout" };
+        painter.setFont(QFont("Arial", 12, QFont::Bold));
+        painter.setBrush(Qt::lightGray);
+
+        for (int i = 0; i < headers.size(); ++i) {
+            painter.drawRect(100 + i * colWidth, y, colWidth, 40);
+            painter.drawText(110 + i * colWidth, y + 30, headers[i]);
+        }
+        y += 50; // Ligne suivante
+    };
+
+    drawHeaders(); // Dessiner les en-têtes de la première page
+
+    // Remplissage des lignes du tableau
+    painter.setFont(QFont("Arial", 10));
+    painter.setBrush(Qt::NoBrush); // Pas de fond pour les cellules
+    QSqlQuery query("SELECT idproduit, nomproduit, dateExpiration, quantiteDisponible, humidite, temperature, dateAjout FROM Produits");
+    while (query.next()) {
+        if (y > pdfWriter.height() - 200) { // Vérification si la page est pleine
+            painter.drawText(pdfWriter.width() - 200, pdfWriter.height() - 50, tr("Page ") + QString::number(page));
+            pdfWriter.newPage();
+            y = 100; // Réinitialisation de la position
+            page++;
+            drawHeaders(); // Répéter les en-têtes
+        }
+
+        // Dessiner les colonnes
+        QStringList data = {
+            query.value("idproduit").toString(),
+            query.value("nomproduit").toString(),
+            query.value("dateExpiration").toDate().toString("dd/MM/yyyy"),
+            query.value("quantiteDisponible").toString(),
+            query.value("humidite").toString(),
+            query.value("temperature").toString(),
+            query.value("dateAjout").toDate().toString("dd/MM/yyyy")
+        };
+
+        for (int i = 0; i < data.size(); ++i) {
+            painter.drawRect(100 + i * colWidth, y, colWidth, 40);
+            painter.drawText(110 + i * colWidth, y + 30, data[i]);
+        }
+        y += 50; // Ligne suivante
+    }
+
+    // Ajouter le numéro de page à la fin
+    painter.drawText(pdfWriter.width() - 200, pdfWriter.height() - 50, tr("Page ") + QString::number(page));
+
+    painter.end();
+    QMessageBox::information(this, tr("PDF généré"), tr("Le fichier PDF a été généré avec succès."));
 }
+
+
+
+
+
+
+
 void MainWindow::historique(const QString &action, const QString &nomProduit, const QString &details) {
     QString filePath = QCoreApplication::applicationDirPath() + "/historique.txt";
 
@@ -478,15 +574,15 @@ void MainWindow::historique(const QString &action, const QString &nomProduit, co
 void MainWindow::on_bouttonhistorique_clicked() {
     ui->stackedWidgetgererproduit->setCurrentWidget(ui->pagehistorique);
 
-    QString filePath = QCoreApplication::applicationDirPath() + "/historique.txt";
-    QFile file(filePath);
+    QString filePath = QCoreApplication::applicationDirPath() + "/historique.txt";//retourne le chemin du répertoire dans lequel l'application s'exécute
+    QFile file(filePath);//represente historique.txt
 
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {//ouvrir fichier en mode lecture textuelle
         QMessageBox::critical(this, "Erreur","fichier historique vide");
         return;
     }
 
-    QTextStream in(&file);
+    QTextStream in(&file);//lire contenu fichier l par l
     QString historiqueContent = in.readAll();
     file.close();
 
@@ -496,7 +592,7 @@ void MainWindow::on_bouttonhistorique_clicked() {
 
 void MainWindow::verifierproduitexpire() {
     QSqlQuery req;
-    req.prepare("SELECT COUNT(*) FROM Produits WHERE dateExpiration < CURRENT_DATE");
+    req.prepare("SELECT COUNT(*) FROM Produits WHERE dateExpiration < CURRENT_DATE");//compter les produits dont dateex<date act
     req.exec();
 
     if (req.next()) {

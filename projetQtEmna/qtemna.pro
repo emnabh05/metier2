@@ -28,7 +28,6 @@ SOURCES += \
 HEADERS += \
     connection.h \
     delegatedeuxbouttons.h \
-    header.h \
     mainwindow.h \
     produits.h
 
